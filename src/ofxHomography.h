@@ -64,9 +64,18 @@ public:
 		}
 	}
 	
+	static std::vector<glm::vec3> rectangleToCorners(const ofRectangle& r){
+		std::vector<glm::vec3> v;
+		v.resize(4);
+		v[0] = r.getTopLeft();
+		v[1] = r.getTopRight();
+		v[2] = r.getBottomRight();
+		v[3] = r.getBottomLeft();
+		return v;
+	}
 	
-	template <class T>
-	static void findHomography(T src, T dst, float homography[16]){
+	template <class T, class C>
+	static void findHomography(const T & src, const C & dst, glm::mat4& homography){
 		
 		// create the equation system to be solved
 		// src and dst must implement [] operator for point access
@@ -111,34 +120,23 @@ public:
 			0      ,      0,0,0,		// 0    0   0 0
 			P[2][8],P[5][8],0,1};		// h13  h23 0 h33
 		
-		for(int i=0;i<16;i++) homography[i] = aux_H[i];
+//		for(int i=0;i<16;i++) homography[i] = aux_H[i];
+		homography = glm::make_mat4(aux_H);
 	}
 	
-	template <class T>
-	static ofMatrix4x4 findHomography(T src, T dst){
-		float homography[16];
-		findHomography(src, dst, homography);
-		return ofMatrix4x4(homography);
+	template <class T, class C>
+	static glm::mat4 findHomography(const T& source, const C& destination){
+		glm::mat4 homography;
+		findHomography(source, destination, homography);
+		return homography;
 	}
-	
-	static ofPoint toScreenCoordinates(ofPoint point, ofMatrix4x4 homography){
-		ofVec4f original;
-		ofVec4f screen;
-		
-		original.x = point.x;
-		original.y = point.y;
-		original.z = point.z;
-		original.w = 1.0;
-		
-		ofMatrix4x4 transposed = ofMatrix4x4::getTransposedOf(homography);
-		
-		screen = transposed * original;
-		
-		screen.x = screen.x / screen.w;
-		screen.y = screen.y / screen.w;
-		screen.z = screen.z / screen.w;
-		
-		return ofPoint(screen.x,screen.y, screen.z);
+	static glm::vec3 toDestinationCoordinates(const glm::vec3& point, const glm::mat4& homography){
+		glm::vec4 destPoint =  homography * glm::vec4(point, 1.0);
+		return  destPoint.xyz() / destPoint.w;
+	}
+	static glm::vec3 toSourceCoordinates(const glm::vec3& point, const glm::mat4& homography){
+		glm::vec4 source = glm::vec4(point, 1.0) * glm::inverse(homography);
+		return  source.xyx() / source.w;
 	}
 
 };
