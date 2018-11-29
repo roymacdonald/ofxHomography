@@ -75,7 +75,7 @@ public:
 	}
 	
 	template <class T, class C>
-	static void findHomography(const T & src, const C & dst, glm::mat4& homography){
+	static void findHomography(const std::vector<T> & src, const std::vector<C> & dst, glm::mat4& homography){
 		
 		// create the equation system to be solved
 		// src and dst must implement [] operator for point access
@@ -95,7 +95,7 @@ public:
 		// so for 4 points we have 8 equations for 8 terms to solve: h11 - h32
 		// after ordering the terms it gives the following matrix
 		// that can be solved with gaussian elimination:
-		
+		if(src.size() >= 4 && dst.size() >= 4){
 		float P[8][9]={
 			{-src[0].x, -src[0].y, -1,   0,   0,  0, src[0].x*dst[0].x, src[0].y*dst[0].x, -dst[0].x }, // h11
 			{  0,   0,  0, -src[0].x, -src[0].y, -1, src[0].x*dst[0].y, src[0].y*dst[0].y, -dst[0].y }, // h12
@@ -122,6 +122,9 @@ public:
 		
 //		for(int i=0;i<16;i++) homography[i] = aux_H[i];
 		homography = glm::make_mat4(aux_H);
+		}else{
+			ofLogError("ofxHomography::findHomography") << "Source or destination wrong size!. must be equat to 4.";
+		}
 	}
 	
 	template <class T, class C>
@@ -132,11 +135,11 @@ public:
 	}
 	static glm::vec3 toDestinationCoordinates(const glm::vec3& point, const glm::mat4& homography){
 		glm::vec4 destPoint =  homography * glm::vec4(point, 1.0);
-		return  destPoint.xyz() / destPoint.w;
+		return  glm::vec3(destPoint) / destPoint.w;
 	}
 	static glm::vec3 toSourceCoordinates(const glm::vec3& point, const glm::mat4& homography){
 		glm::vec4 source = glm::vec4(point, 1.0) * glm::inverse(homography);
-		return  source.xyx() / source.w;
+		return  glm::vec3(source) / source.w;
 	}
 
 };
